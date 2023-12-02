@@ -1,17 +1,19 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { BooksService } from './books.service';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { GetBookByIdPayload, GetBookPayload } from './dto';
 
 @Controller('books')
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
-  @Get('search')
-  async getBooks(@Query('q') searchString: string) {
-    return this.booksService.searchBooksByTitle(searchString);
+  @MessagePattern('search')
+  async getBooks(@Payload() { query }: GetBookPayload) {
+    return this.booksService.searchBooksByTitle(query);
   }
 
-  @Get(':id')
-  async getBookById(@Param('id', ParseIntPipe) id: number) {
+  @MessagePattern(':id')
+  async getBookById(@Payload() { id }: GetBookByIdPayload) {
     return this.booksService.getBookById(id);
   }
 }

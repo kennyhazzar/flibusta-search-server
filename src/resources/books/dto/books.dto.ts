@@ -13,3 +13,11 @@ export class GetBookByIdDto {
   authors: AuthorDto[];
   genres: GenreDto[];
 }
+
+export class GetBookPayload {
+  query: string;
+}
+
+export class GetBookByIdPayload {
+  id: number;
+}
