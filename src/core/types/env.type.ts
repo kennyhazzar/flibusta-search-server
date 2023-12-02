@@ -10,3 +10,8 @@ export class DatabaseConfigs {
   password: string;
   name: string;
 }
+
+export class RedisConfigs {
+  host: string;
+  port: number;
+}
