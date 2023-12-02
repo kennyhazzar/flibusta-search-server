@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from './entities';
 import { Repository } from 'typeorm';
 import { GetBookByIdDto } from './dto/books.dto';
 import { booksQuery } from './db';
 import { getBookResult } from './helpers';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class BooksService {
   constructor(
     @InjectRepository(Book) private readonly bookRepository: Repository<Book>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   /**
@@ -18,15 +21,23 @@ export class BooksService {
    * @returns Объект книги или null
    */
   async getBookById(id: number): Promise<GetBookByIdDto | null> {
-    const queryResult = await booksQuery(this.bookRepository)
-      .where('b.BookId = :id', { id })
-      .getRawMany();
+    const cacheKey = `book_${id}`;
 
-    if (queryResult.length) {
-      return getBookResult(id, queryResult);
-    } else {
-      return null;
+    let book = await this.cacheManager.get<GetBookByIdDto>(cacheKey);
+
+    if (!book) {
+      const queryResult = await booksQuery(this.bookRepository)
+        .where('b.BookId = :id', { id })
+        .getRawMany();
+
+      if (queryResult.length) {
+        book = getBookResult(id, queryResult);
+        this.cacheManager.set(cacheKey, book, 360000);
+      } else {
+        return null;
+      }
     }
+    return book;
   }
 
   async searchBooksByTitle(searchString: string, size = 10, page = 1) {
@@ -44,9 +55,13 @@ export class BooksService {
       .getRawMany();
 
     for (const rawBook of queryResult) {
-      books.push(getBookResult(rawBook.b_BookId, queryResult));
+      const book = getBookResult(rawBook.b_BookId, queryResult);
+      books.push(book);
+      this.cacheManager.set(`book_${book.id}`, book, 360000);
     }
 
-    return books;
+    return books.filter(
+      (obj, index) => index === books.findIndex((o) => obj.id === o.id),
+    );
   }
 }

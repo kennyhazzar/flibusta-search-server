@@ -16,6 +16,8 @@ export class GetBookByIdDto {
 
 export class GetBookPayload {
   query: string;
+  size: number;
+  page: number;
 }
 
 export class GetBookByIdPayload {
