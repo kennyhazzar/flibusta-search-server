@@ -7,12 +7,12 @@ import { GetBookByIdPayload, GetBookPayload } from './dto';
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
 
-  @MessagePattern('search')
+  @MessagePattern('search-by-title')
   async getBooks(@Payload() { query }: GetBookPayload) {
     return this.booksService.searchBooksByTitle(query);
   }
 
-  @MessagePattern(':id')
+  @MessagePattern('search-by-id')
   async getBookById(@Payload() { id }: GetBookByIdPayload) {
     return this.booksService.getBookById(id);
   }
